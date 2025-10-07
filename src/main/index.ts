@@ -1,13 +1,18 @@
 import { app, BrowserWindow, ipcMain, Tray } from "electron";
 
-import dotenv from "dotenv";
+
 import { createWindow } from "./window";
 import { createTray } from "./components/tray";
 import {   agentLogin, clearUser, loadUser } from "./components/auth";
 import { connectSocket } from "./components/socket";
 import { pollTimerState } from "./components/pollTimerState";
 import { Timer, User } from "../types";
-dotenv.config();
+import { configDotenv } from "./utils/configDotenv";
+
+
+
+configDotenv();
+
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {

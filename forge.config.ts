@@ -11,10 +11,16 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import { mainConfig } from './webpack.main.config';
 import { rendererConfig } from './webpack.renderer.config';
 
+import path from 'path';
+
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    extraResource: ['.env', 'assets'  ],
+    
   },
+  
+
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({}),
@@ -29,6 +35,7 @@ const config: ForgeConfig = {
       
       renderer: {
         config: rendererConfig,
+
         entryPoints: [
           {
             html: './src/renderer/index.html',

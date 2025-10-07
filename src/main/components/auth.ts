@@ -1,50 +1,89 @@
-import keytar from "keytar";
-import axios, { AxiosError, isAxiosError } from "axios";
+ 
+import { app } from "electron";
+import axios from "axios";
 import { machineIdSync } from "node-machine-id";
-import os from "os";
 import { LoginCredentials, LoginResult, User } from "../../types";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+import { configDotenv } from "../utils/configDotenv";
 
-const SERVICE_NAME = "AffotaxMonitor";
-const ACCOUNT_NAME = "crm-agent";
-const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL;
+configDotenv();
 
-
+// CONSTANTS
 const DEVICE_ID = machineIdSync(true);
 
-export async function loadUser(): Promise<User> {
-  const blob = await keytar.getPassword(SERVICE_NAME, ACCOUNT_NAME);
-  if (!blob) return null;
-  try {
-    return JSON.parse(blob);
-  } catch {
-    return null;
-  }
-}
+const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL;
+const SECRET_KEY = process.env.SECRET_KEY;
+
+
+const ENCRYPTION_KEY = crypto.createHash("sha256").update(SECRET_KEY).digest();
+const IV = Buffer.alloc(16, 0); 
+
+// PATHS
+const userDataPath = app.getPath("userData");
+const tokenFilePath = path.join(userDataPath, "auth.enc");
+
+
+
+
+
 
 export async function saveUser(user: User) {
-  await keytar.setPassword(SERVICE_NAME, ACCOUNT_NAME, JSON.stringify(user));
+  const cipher = crypto.createCipheriv("aes-256-cbc", ENCRYPTION_KEY, IV);
+  let encrypted = cipher.update(JSON.stringify(user), "utf8", "base64");
+  encrypted += cipher.final("base64");
+  fs.writeFileSync(tokenFilePath, encrypted);
 }
+
+
+
+export async function loadUser() {
+  if (!fs.existsSync(tokenFilePath)) return null;
+  const encrypted = fs.readFileSync(tokenFilePath, "utf8");
+  const decipher = crypto.createDecipheriv("aes-256-cbc", ENCRYPTION_KEY, IV);
+  let decrypted = decipher.update(encrypted, "base64", "utf8");
+  decrypted += decipher.final("utf8");
+ 
+  return JSON.parse(decrypted);
+}
+
+
 
 export async function clearUser() {
-  await keytar.deletePassword(SERVICE_NAME, ACCOUNT_NAME);
+  if (fs.existsSync(tokenFilePath)) fs.unlinkSync(tokenFilePath);
 }
 
-export async function agentLogin(payload: LoginCredentials): Promise<LoginResult> {
+
+
+
+
+
+
+export async function agentLogin(
+  payload: LoginCredentials
+): Promise<LoginResult> {
   try {
     console.log("payload is", payload);
 
-
-     if (!payload.email || !payload.password) {
+    if (!payload.email || !payload.password) {
       throw new Error("Email & Password required");
     }
 
-const { data } = await axios.post("http://localhost:8080/api/v1/user/login/user", {
-      email: payload.email,
-      password: payload.password,
-    }, { timeout: 15000 });
+    const { data } = await axios.post(
+      `${BACKEND_BASE_URL}/api/v1/user/login/user`,
+      {
+        email: payload.email,
+        password: payload.password,
+      },
+      { timeout: 15000 }
+    );
 
     if (!data || !data.token) {
-      return { success: false, message: "Invalid response from server: Missing token" };
+      return {
+        success: false,
+        message: "Invalid response from server: Missing token",
+      };
     }
 
     const user: User = {
@@ -54,10 +93,15 @@ const { data } = await axios.post("http://localhost:8080/api/v1/user/login/user"
       email: data.user.email,
     };
 
+
     await saveUser(user);
 
     return { success: true, user };
   } catch (error) {
-    return { success: false, message: error?.response?.data?.message || error.message || "Login failed" };
+    return {
+      success: false,
+      message:
+        error?.response?.data?.message || error.message || "Login failed",
+    };
   }
 }

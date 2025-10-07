@@ -17,4 +17,14 @@ export const mainConfig: Configuration = {
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },
+
+  //  target: "electron-main", // ✅ Ensures correct environment for Node native modules
+  //  externals: {
+  //   keytar: 'commonjs keytar',
+  //   'node-machine-id': 'commonjs node-machine-id',
+  // },
+  // node: {
+  //   __dirname: false,
+  //   __filename: false, // ✅ Makes sure __dirname/__filename resolve properly
+  // },
 };
