@@ -34,14 +34,7 @@ export default function Dashboard({
     return () => clearInterval(interval);
   }, [timer.startTime]);
 
-  const handleLogout = async () => {
-    try {
-      await window.agent.logout();
-      onLogoutSuccess();
-    } catch (err: any) {
-      console.error("Logout error:", err?.message);
-    }
-  };
+ 
 
   return (
     <div className=" w-full bg-gray-50 flex flex-col items-center justify-between   shadow-xl overflow-hidden">

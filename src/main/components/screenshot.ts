@@ -8,41 +8,56 @@ import FormData from "form-data";
 import { User } from "../../types";
 
 const DEVICE_ID = machineIdSync(true);
-const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL;
+const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL || "http://localhost:5000";
 const STATUS_POLL_MS = parseInt(process.env.STATUS_POLL_MS || "10000", 10);
-const SCREENSHOT_INTERVAL_MS = parseInt(
-  process.env.SCREENSHOT_INTERVAL_MS || "300000",
-  10
-);
+const SCREENSHOT_INTERVAL_MS = parseInt(process.env.SCREENSHOT_INTERVAL_MS || "300000", 10);
 
- const QUEUE_DIR = path.join(app.getPath('userData'), 'queue');
- if (!fs.existsSync(QUEUE_DIR)) fs.mkdirSync(QUEUE_DIR, { recursive: true });
+const QUEUE_DIR = path.join(app.getPath("userData"), "queue");
+if (!fs.existsSync(QUEUE_DIR)) fs.mkdirSync(QUEUE_DIR, { recursive: true });
+
+/**
+ * Takes a screenshot and uploads it to the backend (or queues it on failure).
+ */
 
 
+export async function takeAndUploadScreenshot(user: User, timerRunning: boolean) {
+  const { jwt, id } = user;
 
- 
-export async function takeAndUploadScreenshot({jwt, email} : User, timerRunning: boolean) {
   if (!jwt || !timerRunning) {
-    setTimeout(takeAndUploadScreenshot, SCREENSHOT_INTERVAL_MS);
+    console.log("[Screenshot] Skipping — timer not running or missing JWT");
     return;
   }
+
   const ts = Date.now();
-  const tmp = path.join(app.getPath("temp"), `affotax-${ts}.jpg`);
+  const tmpFile = path.join(app.getPath("temp"), `affotax-${ts}.jpg`);
+
+
+  console.log("DEICE ID IS", DEVICE_ID);
+
   try {
-    await screenshot({ filename: tmp });
-    // const active = await activeWin().catch(() => null);
+    console.log(`[Screenshot] Capturing to: ${tmpFile}`);
+    
+    // ✅ Capture as buffer (does NOT create any extra file)
+    const img = await screenshot({ format: "jpg" });
+
+    // ✅ Write buffer manually to your desired file path
+    fs.writeFileSync(tmpFile, img);
+
     const meta = {
-      email,
-      deviceId: DEVICE_ID,
+      userId: id,
       timestamp: new Date(ts).toISOString(),
-    //   activeWindow: active?.title || null,
-    //   app: active?.owner?.name || null,
+      deviceId: DEVICE_ID,
     };
-    await uploadWithRetry(tmp, meta, jwt);
-  } catch (e) {
-    queueFile(tmp, { email, deviceId: DEVICE_ID, timestamp: ts });
-  } finally {
-    setTimeout(takeAndUploadScreenshot, SCREENSHOT_INTERVAL_MS);
+
+    await uploadWithRetry(tmpFile, meta, jwt);
+    console.log("[Screenshot] Upload successful");
+  } catch (err) {
+    console.error("[Screenshot] Capture or upload failed:", err);
+    if (fs.existsSync(tmpFile)) {
+      queueFile(tmpFile, { userId: id, timestamp: new Date(ts).toISOString() });
+    } else {
+      console.warn("[Screenshot] Skipped queueing — screenshot file not found:", tmpFile);
+    }
   }
 }
 
@@ -56,86 +71,121 @@ export async function takeAndUploadScreenshot({jwt, email} : User, timerRunning:
 
 
 
-async function uploadWithRetry(filePath: string, meta: any, jwt:string,  attempt = 0) {
+/**
+ * Uploads a screenshot file with exponential retry and fallback to queue on failure.
+ */
+async function uploadWithRetry(filePath: string, meta: any, jwt: string, attempt = 0): Promise<void> {
   const fd = new FormData();
-  fd.append("email", meta.email);
-  fd.append("deviceId", meta.deviceId);
+  fd.append("userId", meta.userId);
   fd.append("timestamp", meta.timestamp);
-  fd.append("activeWindow", meta.activeWindow || "");
-  fd.append("app", meta.app || "");
+  fd.append("deviceId", meta.deviceId || DEVICE_ID);
   fd.append("screenshot", fs.createReadStream(filePath));
+
   try {
-    await axios.post(`${BACKEND_BASE_URL}/api/agent/screenshot`, fd, {
-      headers: { Authorization: `Bearer ${jwt}`, ...fd.getHeaders() },
+    await axios.post(`${BACKEND_BASE_URL}/api/v1/agent/screenshot`, fd, {
+      headers: { Authorization: jwt, ...fd.getHeaders() },
       timeout: 30000,
       maxBodyLength: Infinity,
     });
-    try {
-      fs.unlinkSync(filePath);
-    } catch {
-        console.log("Error in uploadWithRetry", )
-    }
 
-  } catch (e) {
+    fs.unlinkSync(filePath);
+    console.log(`[Upload] Success: ${path.basename(filePath)}`);
+  } catch (err) {
+    console.warn(`[Upload] Attempt ${attempt + 1} failed:`, err.message || err);
+
     if (attempt < 3) {
       const backoff = Math.min(60000, 2000 * Math.pow(2, attempt));
+      console.log(`[Upload] Retrying in ${backoff / 1000}s...`);
       setTimeout(() => uploadWithRetry(filePath, meta, jwt, attempt + 1), backoff);
     } else {
+      console.log("[Upload] Max retries reached — queueing file.");
       queueFile(filePath, meta);
     }
   }
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Saves a failed screenshot upload locally for retry later.
+ */
 function queueFile(filePath: string, meta: any) {
   try {
-    const dest = path.join(
-      QUEUE_DIR,
-      `${meta.timestamp}-$
- {path.basename(filePath)}`
-    );
+    const fileName = `${meta.timestamp}-${path.basename(filePath)}`;
+    const dest = path.join(QUEUE_DIR, fileName);
+
     fs.copyFileSync(filePath, dest);
-    fs.writeFileSync(dest + ".json", JSON.stringify(meta));
-    try {
-      fs.unlinkSync(filePath);
-    } catch {
-        console.log("error in queueFile")
-    }
-  } catch(e) {
-    console.log("Error in queueFile", e)
+    fs.writeFileSync(dest + ".json", JSON.stringify(meta, null, 2));
+    fs.unlinkSync(filePath);
+
+    console.log(`[Queue] Saved file: ${fileName}`);
+  } catch (err) {
+    console.error("[Queue] Failed to save queued file:", err);
   }
 }
 
 
 
-export async function flushQueue({jwt, email}: User) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Attempts to flush queued screenshots by uploading them.
+ */
+export async function flushQueue(user: User): Promise<void> {
+  const { jwt, id } = user;
   if (!jwt) return;
+
   const files = fs.readdirSync(QUEUE_DIR).filter((f) => /\.(jpg|png)$/.test(f));
-  for (const f of files) {
-    const img = path.join(QUEUE_DIR, f);
-    const metaPath = img + ".json";
-    let meta = {
-      email,
-      deviceId: DEVICE_ID,
-      timestamp: new Date().toISOString(),
-    };
+
+  for (const file of files) {
+    const imgPath = path.join(QUEUE_DIR, file);
+    const metaPath = imgPath + ".json";
+
+    let meta = { userId: id, timestamp: new Date().toISOString(), deviceId: DEVICE_ID };
+
     if (fs.existsSync(metaPath)) {
       try {
         meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
       } catch {
-        console.log("error in flushQueue")
+        console.warn(`[Queue] Could not read meta for ${file}`);
       }
     }
+
     try {
-      await uploadWithRetry(img, meta, jwt);
-      try {
-        fs.unlinkSync(metaPath);
-      } catch {
-        console.log("error in flushuqure")
-      }
-    } catch(e) {
-        console.log("Error in flushQueue", e)
+      await uploadWithRetry(imgPath, meta, jwt);
+      fs.unlinkSync(metaPath);
+      console.log(`[Queue] Flushed file: ${file}`);
+    } catch (err) {
+      console.error(`[Queue] Failed to upload queued file: ${file}`, err);
     }
   }
-  setTimeout(flushQueue, 60000);
+
+  // Schedule next flush
+  setTimeout(() => flushQueue(user), 60000);
 }

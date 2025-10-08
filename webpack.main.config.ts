@@ -17,6 +17,9 @@ export const mainConfig: Configuration = {
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },
+   
+
+  // externals: ['screenshot-desktop'],
 
   //  target: "electron-main", // ✅ Ensures correct environment for Node native modules
   //  externals: {

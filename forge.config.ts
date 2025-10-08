@@ -16,12 +16,18 @@ import path from 'path';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    extraResource: ['.env', 'assets'  ],
+    extraResource: ['.env', 'assets',  
+      
+     ],
+    
     
   },
   
 
-  rebuildConfig: {},
+  // rebuildConfig: {
+  //   onlyModules: ['screenshot-desktop'],
+
+  // },
   makers: [
     new MakerSquirrel({}),
     new MakerZIP({}, ['darwin']),

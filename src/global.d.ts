@@ -13,6 +13,7 @@ declare global {
       openAtLogin: (enabled: boolean) => Promise<any>;
 
       onTimerUpdate: (callback: (timer: Timer) => void) => () => void;
+      onLogout: (callback: () => void) => () => void;
       onUserUpdate: (callback: (user: User) => void) => () => void;
 
     };

@@ -14,7 +14,7 @@ export interface LoginCredentials {
   password: string;
 }
 
-export type LoginResult = { success: true; user: User, message?: string } | { success: false; message: string };
+export type LoginResult = { success: true; user: User; message?: string } | { success: false;  message: string };
 
 export interface Timer {
   _id: string;

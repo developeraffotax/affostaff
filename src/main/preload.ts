@@ -37,6 +37,15 @@ contextBridge.exposeInMainWorld("agent", {
     return () => ipcRenderer.removeListener("timer:update", listener);
   },
 
+
+  onLogout: (callback: (data: any) => void) => {
+    const listener = (_event: IpcRendererEvent, data: any) => callback(data);
+    ipcRenderer.on("agent:logout", listener);
+
+    // Return cleanup function
+    return () => ipcRenderer.removeListener("agent:logout", listener);
+  },
+
   onUserUpdate: (callback: (user: any) => void) => {
     const listener = (_event: IpcRendererEvent, user: any) => callback(user);
     ipcRenderer.on("user:update", listener);

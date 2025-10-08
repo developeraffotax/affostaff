@@ -19,6 +19,10 @@ function App() {
     });
   }, []);
 
+  useEffect(() => {
+  window.agent.onLogout( () => setUser(null) );
+}, []);
+
   if (loading) return <div>Loading...</div>;
 
   return (

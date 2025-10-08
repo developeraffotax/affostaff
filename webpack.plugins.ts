@@ -17,7 +17,14 @@ export const plugins = [
          {
         from: path.resolve(__dirname, "assets"),
         to: path.resolve(__dirname, ".webpack/renderer/assets")
-      }
+      },
+      // {
+      //     from: path.resolve(
+      //       "node_modules/screenshot-desktop/lib/win32"
+      //     ),
+      //     to: path.resolve(".webpack/main/win32"),
+      //   },
+      
       ],
     }),
 ];
