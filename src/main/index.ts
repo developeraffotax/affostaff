@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray } from "electron";
+import { app, BrowserWindow, ipcMain, Tray, webContents } from "electron";
 
 
 import { createWindow } from "./window";
@@ -28,9 +28,12 @@ let tray: Tray | null = null;
 // let timerRunning = false;
 
 const timer: Timer = {
-  id: '',
+  _id: '',
   isRunning: false,
   startTime: '',
+  department: '',
+  clientName: '',
+  task: '',
 
 }
 
@@ -91,15 +94,28 @@ app.on("ready", async () => {
     //     console.log("Timer updated in sokcet:", running);
     //   }
     // );
+    // console.log("USER IS", user)
+
+    pollTimerState(user, (fetchedTimer) => {
+      timer._id = fetchedTimer._id;
+      timer.isRunning = fetchedTimer.isRunning;
+      timer.startTime = fetchedTimer.startTime;
+
+      timer.task = fetchedTimer.task;
+      timer.department = fetchedTimer.department;
+      timer.clientName = fetchedTimer.clientName;
+       
+
+      // ✅ notify renderer about new timer state
+  if (mainWin && !mainWin.isDestroyed()) {
+    mainWin.webContents.send("timer:update", timer);
+  }
+
+  
+    })
 
 
-    // pollTimerState(user, (running) => {
-    //   timer.isRunning = running;
-    //   console.log("Timer updated in poll timer state:", running);
-    // })
-
-
-
+    
     
   }
 

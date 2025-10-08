@@ -1,4 +1,5 @@
-import { LoginResult, User } from "./types";
+ 
+import { LoginResult, Timer, User } from "./types";
 
 export {};
 
@@ -10,6 +11,10 @@ declare global {
       logout: () => Promise<any>;
       getState: () => Promise<any>;
       openAtLogin: (enabled: boolean) => Promise<any>;
+
+      onTimerUpdate: (callback: (timer: Timer) => void) => () => void;
+      onUserUpdate: (callback: (user: User) => void) => () => void;
+
     };
   }
 }

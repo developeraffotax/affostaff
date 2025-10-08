@@ -1,34 +1,49 @@
 import axios from "axios";
 import { machineIdSync } from "node-machine-id";
-import { User } from "../..//types";
+import { Timer, User } from "../../types";
+import { configDotenv } from "../utils/configDotenv";
+ 
+
+configDotenv();
 
 const DEVICE_ID = machineIdSync(true);
 const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL;
 const STATUS_POLL_MS = parseInt(process.env.STATUS_POLL_MS || "10000", 10);
 
 export async function pollTimerState(
-  {jwt}: User,
-  onTimerUpdate: (running: boolean) => void
+  user: User,
+  onTimerUpdate: (running: Timer) => void
 ) {
+  if (!user.jwt) return;
 
-  console.log("jwt in polltimerstate", jwt)
-
-  if (!jwt) return;
   try {
     const { data } = await axios.get(
-      `${BACKEND_BASE_URL}/api/agent/timer-status`,
+      `${BACKEND_BASE_URL}/api/v1/timer/agent/timer-status`,
       {
-        headers: { Authorization: `Bearer ${jwt}` },
-        params: { deviceId: DEVICE_ID },
+        headers: { Authorization: `${user.jwt}` },
         timeout: 10000,
       }
     );
 
-    const running = !!data?.running;
-    onTimerUpdate(running); // 🔥 call back to update your main state
+    console.log("POLL TIMER DATA", data);
+
+    if (data?.timer) {
+      // Timer is running — update normally
+      onTimerUpdate(data.timer);
+    } else {
+      // No timer running — send a default empty timer
+      onTimerUpdate({
+        _id: "",
+        isRunning: false,
+        startTime: "",
+        task: "",
+        department: "",
+        clientName: "",
+      });
+    }
   } catch (e) {
-    console.log("Error in pollTimerState", e)
+    console.log("Error in pollTimerState", e);
   } finally {
-    setTimeout(pollTimerState, STATUS_POLL_MS);
+    setTimeout(() => pollTimerState(user, onTimerUpdate), STATUS_POLL_MS);
   }
 }

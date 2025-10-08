@@ -17,7 +17,7 @@ export interface LoginCredentials {
 export type LoginResult = { success: true; user: User, message?: string } | { success: false; message: string };
 
 export interface Timer {
-  id: string;
+  _id: string;
   isRunning: boolean;
   startTime: string;
   endTime?: string;
