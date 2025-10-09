@@ -49,6 +49,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@paymoapp/active-window": "^2.1.2",
     "autoprefixer": "^10.4.21",
     "axios": "^1.12.2",
     "dotenv": "^17.2.2",

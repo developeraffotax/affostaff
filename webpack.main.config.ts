@@ -19,7 +19,7 @@ export const mainConfig: Configuration = {
   },
    
 
-  // externals: ['screenshot-desktop'],
+   externals: ['get-windows'],
 
   //  target: "electron-main", // ✅ Ensures correct environment for Node native modules
   //  externals: {

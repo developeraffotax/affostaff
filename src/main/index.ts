@@ -7,6 +7,9 @@ import { Timer, User } from "../types";
 import { configDotenv } from "./utils/configDotenv";
 import { connectSocket } from "./components/socket";
 import { takeAndUploadScreenshot } from "./components/screenshot";
+import { getActiveWindowActivity } from "./components/userActivity";
+ 
+ 
 
 // --------------------
 //  Initialization
@@ -60,6 +63,8 @@ app.on("ready", async () => {
   mainWin = createWindow();
   trayData = createTray(mainWin, timer);
 
+   
+
   mainWin.webContents.once("did-finish-load", async () => {
     const savedUser = await loadUser();
 
@@ -90,8 +95,15 @@ app.on("ready", async () => {
 
 
 // Run screenshot loop every 5 minutes
-setInterval(() => {
+setInterval(async() => {
   if (timer.isRunning && user.jwt) {
+
+ 
+    
+    const activeWindow = getActiveWindowActivity();
+
+    console.log("Active Window:", activeWindow);
+
     takeAndUploadScreenshot(user, true);
   }
 },   10 * 1000);
