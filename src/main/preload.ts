@@ -51,5 +51,11 @@ contextBridge.exposeInMainWorld("agent", {
     ipcRenderer.on("user:update", listener);
     return () => ipcRenderer.removeListener("user:update", listener);
   },
+
+  onKeyStroke: (callback: (user: any) => void) => {
+    const listener = (_event: IpcRendererEvent, user: any) => callback(user);
+    ipcRenderer.on("key-event", listener);
+    return () => ipcRenderer.removeListener("key-event", listener);
+  },
  
 });

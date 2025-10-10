@@ -7,41 +7,54 @@ import { Timer } from "../../types";
 export function createTray(mainWin: BrowserWindow, timer: Timer) {
   const isDev = !app.isPackaged;
 
-  const iconPath = isDev
-    ? path.join(app.getAppPath(), "assets", "icon.png")
-    : path.join(process.resourcesPath, "assets", "icon.png");
+  const iconPathForIdle = isDev
+    ? path.join(app.getAppPath(), "assets", "idleTray.png")
+    : path.join(process.resourcesPath, "assets", "idleTray.png");
 
-  const icon = fs.existsSync(iconPath)
-    ? nativeImage.createFromPath(iconPath)
-    : undefined;
+  const iconPathForActive = isDev
+    ? path.join(app.getAppPath(), "assets", "activeTray.png")
+    : path.join(process.resourcesPath, "assets", "activeTray.png");
 
-  const tray = new Tray(icon);
+  const tray = new Tray(
+    nativeImage.createFromPath(
+      timer.isRunning ? iconPathForActive : iconPathForIdle
+    )
+  );
+
   tray.setToolTip("Affotax Monitor Agent");
 
-  // ✅ helper function to rebuild the tray menu dynamically
-  const updateTrayMenu = () => {
+  // ✅ Single function that updates everything (icon + tooltip + menu)
+  const updateTray = (isRunning: boolean) => {
+    timer.isRunning = isRunning;
+
+    const iconPath = isRunning ? iconPathForActive : iconPathForIdle;
+    if (fs.existsSync(iconPath)) {
+      tray.setImage(nativeImage.createFromPath(iconPath));
+    }
+
+    tray.setToolTip(`Affotax Monitor Agent (${isRunning ? "Running" : "Idle"})`);
+
     const menu = Menu.buildFromTemplate([
       {
         label: "Open",
         click: () => (mainWin ? mainWin.show() : createWindow()),
       },
       {
-        label: `Timer: ${timer.isRunning ? "Running" : "Idle"}`,
+        label: `Timer: ${isRunning ? "Running" : "Idle"}`,
         enabled: false,
       },
       { type: "separator" },
       { label: "Quit", click: () => app.quit() },
     ]);
-
     tray.setContextMenu(menu);
   };
 
-  // initialize once
-  updateTrayMenu();
+  // initialize
+  updateTray(timer.isRunning);
 
-  // open main window when clicking the tray icon
+  // open window when clicking tray
   tray.on("click", () => (mainWin ? mainWin.show() : createWindow()));
 
-  // ✅ return both tray and updater so main process can call it
-  return { tray, updateTrayMenu };
+  // return both the tray and the unified updater
+  return { tray, updateTray };
 }

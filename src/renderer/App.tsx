@@ -11,12 +11,21 @@ function App() {
 
   const timer = useTimer()
 
+  const [key, setKey] = useState(""); 
+
   useEffect(() => {
     window.agent.getState().then((state) => {
       console.log("THE STATE", state)
       setUser(state.user);
       setLoading(false);
     });
+
+    window.agent.onKeyStroke((data) => {
+        setKey(JSON.stringify(data));
+      console.log("KeyStroke", data);
+    })
+
+
   }, []);
 
   useEffect(() => {
@@ -28,6 +37,7 @@ function App() {
   return (
     
 <div className="w-full  flex flex-col justify-between items-center">
+  key: {key}
         <Routes>
  
         <Route

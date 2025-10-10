@@ -8,7 +8,9 @@ import { configDotenv } from "./utils/configDotenv";
 import { connectSocket } from "./components/socket";
 import { takeAndUploadScreenshot } from "./components/screenshot";
 import { getActiveWindowActivity } from "./components/userActivity";
- 
+import net from "net";
+import path from "path";
+import { spawn } from "child_process";
  
 
 // --------------------
@@ -22,7 +24,10 @@ if (require("electron-squirrel-startup")) app.quit();
 //  Globals
 // --------------------
 let mainWin: BrowserWindow | null = null;
-let trayData: { tray: Tray; updateTrayMenu: () => void } | null = null;
+let trayData: { tray: Tray; updateTray: (isRunning: boolean) => void } | null = null;
+
+let pyProc = null;
+
 
 const timer: Timer = {
   _id: "",
@@ -44,7 +49,7 @@ const user: User = {
 //  Utility: Safe Renderer Messaging
 // --------------------
 function sendToRenderer(channel: string, payload: any) {
-  trayData?.updateTrayMenu();
+  trayData?.updateTray(timer.isRunning);
   if (mainWin && !mainWin.isDestroyed()) {
     mainWin.webContents.send(channel, payload);
   }
@@ -64,6 +69,67 @@ app.on("ready", async () => {
   trayData = createTray(mainWin, timer);
 
    
+
+
+
+
+
+
+
+
+
+
+ // Run the Python .exe (handle production paths)
+  const exePath = app.isPackaged
+    ? path.join(process.resourcesPath, "keyboard-listener.exe")
+    : path.join(process.cwd(), "resources", "keyboard-listener.exe");
+
+  pyProc = spawn(exePath);
+
+  pyProc.stdout.on("data", (data) => console.log("Python:", data.toString()));
+  pyProc.stderr.on("data", (data) => console.error("Python error:", data.toString()));
+  pyProc.on("close", () => console.log("Python process closed."));
+
+  // Start TCP server to receive keyboard events
+  const server = net.createServer((socket) => {
+    console.log("Python connected");
+    socket.on("data", (data) => {
+      const messages = data.toString().split("\n").filter(Boolean);
+      messages.forEach((msg) => {
+        try {
+          const event = JSON.parse(msg);
+          console.log("Key Event:", event);
+           mainWin.webContents.send("key-event", event);
+        } catch (err) {
+          console.error("Parse error:", err);
+        }
+      });
+    });
+  });
+
+  server.listen(7070, "127.0.0.1", () => {
+    console.log("Listening on port 7070");
+  });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   mainWin.webContents.once("did-finish-load", async () => {
     const savedUser = await loadUser();

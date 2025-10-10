@@ -11,12 +11,14 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import { mainConfig } from './webpack.main.config';
 import { rendererConfig } from './webpack.renderer.config';
 
-import path from 'path';
+ 
 
 const config: ForgeConfig = {
   packagerConfig: {
+    appVersion: "1.0.0",
+    icon: './assets/icon',
     asar: true,
-    extraResource: ['.env', 'assets',  
+    extraResource: ['.env', 'assets',   "./resources/keyboard-listener.exe"
       
      ],
     

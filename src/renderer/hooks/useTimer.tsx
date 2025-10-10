@@ -20,6 +20,8 @@ export function useTimer() {
       console.log("Timer updated from main:", data);
     })
 
+      
+
     // Cleanup listener
     //return () => unsub();
 

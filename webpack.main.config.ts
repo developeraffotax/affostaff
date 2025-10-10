@@ -18,16 +18,5 @@ export const mainConfig: Configuration = {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },
    
-
-   externals: ['get-windows'],
-
-  //  target: "electron-main", // ✅ Ensures correct environment for Node native modules
-  //  externals: {
-  //   keytar: 'commonjs keytar',
-  //   'node-machine-id': 'commonjs node-machine-id',
-  // },
-  // node: {
-  //   __dirname: false,
-  //   __filename: false, // ✅ Makes sure __dirname/__filename resolve properly
-  // },
+ 
 };
