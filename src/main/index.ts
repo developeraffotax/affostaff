@@ -3,14 +3,14 @@ import { createWindow } from "./window";
 import { createTray } from "./components/tray";
 import { agentLogin, loadUser } from "./components/auth";
 import { pollTimerState } from "./components/pollTimerState";
-import { Timer, User } from "../types";
+import {   Timer, User, } from "../types";
 import { configDotenv } from "./utils/configDotenv";
 import { connectSocket } from "./components/socket";
 import { takeAndUploadScreenshot } from "./components/screenshot";
-import { getActiveWindowActivity } from "./components/userActivity";
-import net from "net";
-import path from "path";
-import { spawn } from "child_process";
+ 
+ 
+import { getActivity } from "./components/activityTracker";
+import { flushActivity, startPythonServer, stopPythonServer } from "./utils/pythonServer";
  
 
 // --------------------
@@ -20,14 +20,19 @@ configDotenv();
 
 if (require("electron-squirrel-startup")) app.quit();
 
+
+const SCREENSHOT_INTERVAL_SECONDS = parseInt(process.env.SCREENSHOT_INTERVAL_SECONDS) || 300;
+
+
 // --------------------
 //  Globals
 // --------------------
 let mainWin: BrowserWindow | null = null;
 let trayData: { tray: Tray; updateTray: (isRunning: boolean) => void } | null = null;
 
-let pyProc = null;
+ 
 
+ 
 
 const timer: Timer = {
   _id: "",
@@ -76,40 +81,8 @@ app.on("ready", async () => {
 
 
 
-
-
-
- // Run the Python .exe (handle production paths)
-  const exePath = app.isPackaged
-    ? path.join(process.resourcesPath, "keyboard-listener.exe")
-    : path.join(process.cwd(), "resources", "keyboard-listener.exe");
-
-  pyProc = spawn(exePath);
-
-  pyProc.stdout.on("data", (data) => console.log("Python:", data.toString()));
-  pyProc.stderr.on("data", (data) => console.error("Python error:", data.toString()));
-  pyProc.on("close", () => console.log("Python process closed."));
-
-  // Start TCP server to receive keyboard events
-  const server = net.createServer((socket) => {
-    console.log("Python connected");
-    socket.on("data", (data) => {
-      const messages = data.toString().split("\n").filter(Boolean);
-      messages.forEach((msg) => {
-        try {
-          const event = JSON.parse(msg);
-          console.log("Key Event:", event);
-           mainWin.webContents.send("key-event", event);
-        } catch (err) {
-          console.error("Parse error:", err);
-        }
-      });
-    });
-  });
-
-  server.listen(7070, "127.0.0.1", () => {
-    console.log("Listening on port 7070");
-  });
+ // Start the Python server
+  startPythonServer(mainWin);
 
 
 
@@ -166,13 +139,17 @@ setInterval(async() => {
 
  
     
-    const activeWindow = getActiveWindowActivity();
+     
 
-    console.log("Active Window:", activeWindow);
 
-    takeAndUploadScreenshot(user, true);
+    const { keyboardActivity, mouseActivity } = flushActivity();
+    const activity = getActivity(keyboardActivity, mouseActivity);
+    console.log("Collected activity:", activity);
+
+
+    takeAndUploadScreenshot(user, activity);
   }
-},   10 * 1000);
+},   SCREENSHOT_INTERVAL_SECONDS * 1000);
 
 
 // --------------------
@@ -212,7 +189,21 @@ ipcMain.handle("agent:login", async (_evt, payload) => {
 // --------------------
 //  App Lifecycle
 // --------------------
+
+// app.on("before-quit", () => {
+//   console.log("🧹 Cleaning up Python process...");
+//   stopPythonServer();
+// });
+
+// app.on("will-quit", () => {
+//   stopPythonServer();
+// });
+
+
+
+
 app.on("window-all-closed", () => {
+  stopPythonServer();
   if (process.platform !== "darwin") app.quit();
 });
 

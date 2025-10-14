@@ -8,7 +8,7 @@ configDotenv();
 
 const DEVICE_ID = machineIdSync(true);
 const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL;
-const STATUS_POLL_MS = parseInt(process.env.STATUS_POLL_MS || "10000", 10);
+const STATUS_POLL_MS = parseInt(process.env.STATUS_POLL_SECONDS || "30", 10) * 1000;
 
 export async function pollTimerState(
   user: User,

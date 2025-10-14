@@ -1,64 +1,46 @@
-// import { GlobalKeyboardListener } from "node-global-key-listener";
+ 
+import { ActivitySummary, KeyboardActivity, MouseActivity } from "../../types";
+import { configDotenv } from "../utils/configDotenv";
 
-// let lastActivity: number = Date.now();
-// let totalActiveMs = 0;
-// let keystrokeCount = 0;
-// let startTime: number = Date.now();
+configDotenv();
 
-// // Create keyboard listener instance
-// const keyboard = new GlobalKeyboardListener();
+const SCREENSHOT_INTERVAL_SECONDS = parseInt(process.env.SCREENSHOT_INTERVAL_SECONDS) || 300; // default to 5 minutes
 
-// /**
-//  * Marks the user's recent activity.
-//  * If idle >10s, resets baseline; otherwise adds active duration.
-//  */
-// function markActivity() {
-//   const now = Date.now();
-//   if (now - lastActivity > 10_000) {
-//     // User was idle more than 10 seconds
-//     lastActivity = now;
-//   } else {
-//     totalActiveMs += now - lastActivity;
-//     lastActivity = now;
-//   }
-// }
 
-// /**
-//  * Start listening to global keyboard events
-//  */
-// export function startActivityMonitor() {
-//   keyboard.addListener((event) => {
-//     // event.state is "DOWN" or "UP"
-//     if (event.state === "DOWN") {
-//       keystrokeCount++;
-//       markActivity();
-//     }
-//   });
 
-//   console.log("[ActivityMonitor] Global keyboard listener started");
-// }
 
-// /**
-//  * Returns snapshot of recent activity & resets counters
-//  */
-// export function getActivitySnapshot() {
-//   const now = Date.now();
-//   const totalTime = now - startTime;
-//   const activityPercent = totalTime > 0 ? (totalActiveMs / totalTime) * 100 : 0;
+const MAX_KEY_EVENTS = SCREENSHOT_INTERVAL_SECONDS;   // define upper expected bound per 5 min
+const MAX_MOUSE_EVENTS = SCREENSHOT_INTERVAL_SECONDS; // define upper expected bound per 5 min
 
-//   const snapshot = {
-//     keystrokes: keystrokeCount,
-//     mouseEvents: 0, // you can add mouse tracking later
-//     totalActiveMs,
-//     totalTime,
-//     activityPercent: Number(activityPercent.toFixed(2)),
-//   };
 
-//   // Reset counters for next period
-//   keystrokeCount = 0;
-//   totalActiveMs = 0;
-//   startTime = now;
-//   lastActivity = now;
+export const getActivity = (keyboardActivity: KeyboardActivity[], mouseActivity: MouseActivity[]): ActivitySummary => {
 
-//   return snapshot;
-// }
+
+
+
+const keyboardCount = keyboardActivity.length;
+const mouseCount = mouseActivity.length;
+
+
+const keyboardActivityPercent = Math.round(Math.min(100, (keyboardCount / MAX_KEY_EVENTS) * 100));
+const mouseActivityPercent = Math.round(Math.min(100, (mouseCount / MAX_MOUSE_EVENTS) * 100));
+
+
+// Combine them — you can weight typing slightly higher if you want
+const overallActivityPercent = Math.round((keyboardActivityPercent * 0.5 + mouseActivityPercent * 0.5));
+
+const summary = {
+  keyboardCount,
+  mouseCount,
+  keyboardActivityPercent,
+  mouseActivityPercent,
+  overallActivityPercent,
+  period: "5min",
+  startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+  endedAt: new Date().toISOString(),
+};
+
+
+     return summary;
+
+}   

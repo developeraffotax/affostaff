@@ -16,9 +16,9 @@ import { rendererConfig } from './webpack.renderer.config';
 const config: ForgeConfig = {
   packagerConfig: {
     appVersion: "1.0.0",
-    icon: './assets/icon',
+    icon: 'assets/icon',
     asar: true,
-    extraResource: ['.env', 'assets',   "./resources/keyboard-listener.exe"
+    extraResource: ['.env', 'assets',   "./resources/keyboard_listener.exe"
       
      ],
     
@@ -31,7 +31,10 @@ const config: ForgeConfig = {
 
   // },
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      // setupIcon: 'assets/icon.ico',
+       
+    }),
     new MakerZIP({}, ['darwin']),
     new MakerRpm({}),
     new MakerDeb({}),

@@ -1,7 +1,8 @@
 import ActiveWindow from '@paymoapp/active-window';
+import { ActiveWindow as ActiveWindowTypes } from '../../types';
 
  
-export function getActiveWindowActivity() {
+export function getActiveWindowActivity(): ActiveWindowTypes {
   try {
     // Initialize once
     ActiveWindow.initialize();
