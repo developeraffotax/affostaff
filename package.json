@@ -1,6 +1,6 @@
 {
   "name": "affotax-monitoring-app",
-  "productName": "Affotax Monitoring App",
+  "productName": "AffoStaff",
   "version": "1.0.0",
   "description": "A desktop companion for Affotax CRM that securely tracks work activity, captures screenshots, and syncs with your CRM in real time.",
   "main": ".webpack/main",

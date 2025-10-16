@@ -33,16 +33,19 @@ export async function takeAndUploadScreenshot(user: User, activity: ActivitySumm
   const tmpFile = path.join(app.getPath("temp"), `affotax-${ts}.jpg`);
 
 
- 
+//  console.log("[DEBUG] screenshot-desktop module path:", path.dirname(require.resolve("screenshot-desktop")));
+
 
   try {
     console.log(`[Screenshot] Capturing to: ${tmpFile}`);
     
     // ✅ Capture as buffer (does NOT create any extra file)
-    const img = await screenshot({ format: "jpg" });
+    const img = await screenshot({ format: "jpg",  });
 
     // ✅ Write buffer manually to your desired file path
     fs.writeFileSync(tmpFile, img);
+
+     
 
     const meta: ScreenshotMeta = {
       userId: id,

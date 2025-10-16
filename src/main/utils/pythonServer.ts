@@ -1,7 +1,7 @@
 import net from "net";
 import path from "path";
 import { spawn, ChildProcessWithoutNullStreams, exec } from "child_process";
-import type { BrowserWindow } from "electron";
+import { app, type BrowserWindow } from "electron";
 import type { ActivityEvent, KeyboardActivity, MouseActivity } from "../../types";
 
 let pyProc: ChildProcessWithoutNullStreams | null = null;
@@ -14,11 +14,21 @@ let mouseActivity: MouseActivity[] = [];
  * Starts the Python background listener and TCP server.
  */
 export function startPythonServer(mainWin: BrowserWindow) {
+  if (pyProc && !pyProc.killed) {
+    console.log("🐍 Python process already active, skipping start.");
+    return;
+  }
+  if (server && server.listening) {
+    console.log("🐍 TCP server already active, skipping start.");
+    return;
+  }
+
+  const isDev = !app.isPackaged;
+
   // Determine .exe path
-  const exePath =
-    process.env.NODE_ENV === "production"
-      ? path.join(process.resourcesPath, "keyboard_listener.exe")
-      : path.join(process.cwd(), "resources", "keyboard_listener.exe");
+  const exePath = isDev
+    ? path.join(process.cwd(), "resources", "keyboard_listener", "keyboard_listener.exe")
+    : path.join(process.resourcesPath, "keyboard_listener", "keyboard_listener.exe");
 
   // Spawn the Python executable
   pyProc = spawn(exePath);
@@ -37,6 +47,14 @@ export function startPythonServer(mainWin: BrowserWindow) {
         try {
           const event: ActivityEvent = JSON.parse(msg);
 
+          // 🧩 Handle shutdown message from Python
+          if (event.type === "shutdown") {
+            console.log("🐍 Received shutdown from Python, closing socket gracefully.");
+            socket.end(); // Graceful close
+            return;
+          }
+
+          // Handle keyboard/mouse events
           if (event.type === "keyboard") {
             keyboardActivity.push({
               type: event.type,
@@ -62,6 +80,27 @@ export function startPythonServer(mainWin: BrowserWindow) {
         }
       });
     });
+
+    socket.on("close", () => {
+      console.log("🐍 Python socket closed");
+    });
+
+    socket.on("error", (err: NodeJS.ErrnoException) => {
+      // ECONNRESET should not happen with graceful shutdown, but just in case
+      if (err.code === "ECONNRESET") {
+        console.warn("🐍 Python connection reset (ignored)");
+      } else {
+        console.error("🐍 Socket error:", err);
+      }
+    });
+  });
+
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "ECONNRESET") {
+      console.warn("🐍 Server connection reset (ignored)");
+    } else {
+      console.error("🐍 Server error:", err);
+    }
   });
 
   server.listen(7070, "127.0.0.1", () => {
@@ -84,22 +123,29 @@ export function flushActivity() {
  */
 export function stopPythonServer() {
   if (server) {
-    server.close(() => console.log("🐍 TCP server closed"));
+    try {
+      server.close(() => console.log("🐍 TCP server closed"));
+      server = null;
+    } catch (err) {
+      console.error("🐍 Error closing server:", err);
+    }
   }
 
   if (pyProc) {
     try {
-      // Try normal kill first
-      pyProc.kill();
+      // Send shutdown message first (graceful)
+      // No need if Python already sent shutdown
+      pyProc.kill("SIGTERM");
 
       // Extra safety for Windows: force kill by name
       if (process.platform === "win32") {
-        exec('taskkill /IM keyboard_listener.exe /F', (err) => {
+        exec("taskkill /IM keyboard_listener.exe /F", (err) => {
           if (!err) console.log("🐍 Python process forcibly killed");
         });
       }
+      pyProc = null;
     } catch (err) {
-      console.error("Failed to stop Python process:", err);
+      console.error("🐍 Failed to stop Python process:", err);
     }
   }
 }

@@ -9,8 +9,7 @@ export function useTimer() {
 
     task: "",
     department: "",
-    clientName: ""
-
+    clientName: "",
   });
 
   useEffect(() => {
@@ -18,15 +17,10 @@ export function useTimer() {
     const unsub = window.agent.onTimerUpdate((data) => {
       setTimer(data);
       console.log("Timer updated from main:", data);
-    })
-
-      
+    });
 
     // Cleanup listener
-    //return () => unsub();
-
-
-    
+    return () => unsub();
   }, []);
 
   return timer;

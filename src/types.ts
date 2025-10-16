@@ -29,8 +29,8 @@ export interface Timer {
 
 
 export interface ActivityBase {
-  type: "keyboard" | "mouse";
-  timestamp: number; // epoch time in milliseconds
+  type: "keyboard" | "mouse" | "shutdown"; // added "shutdown"
+  timestamp?: number; // optional for shutdown
 }
 
 export interface KeyboardActivity extends ActivityBase {
@@ -48,8 +48,14 @@ export interface MouseActivity extends ActivityBase {
   delta?: { x: number; y: number } | null;
 }
 
+// New shutdown event type
+export interface ShutdownEvent extends ActivityBase {
+  type: "shutdown";
+  // no extra fields needed
+}
+
 // Union of all possible events
-export type ActivityEvent = KeyboardActivity | MouseActivity;
+export type ActivityEvent = KeyboardActivity | MouseActivity | ShutdownEvent;
 
 
 

@@ -61,9 +61,24 @@ function sendToRenderer(channel: string, payload: any) {
 }
 
 
+export const updateTimer = (updatedTimer: Timer) => {
+  Object.assign(timer, updatedTimer);
+  sendToRenderer("timer:update", timer);
+}
+
+
+export const updateUser = (updateUser: User) => {
+  Object.assign(user, updateUser);
+   
+}
 
 
 
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+  process.exit(0);
+}
 
 
 // --------------------
@@ -78,11 +93,10 @@ app.on("ready", async () => {
 
 
 
+// Start the Python server
+    startPythonServer(mainWin);
 
 
-
- // Start the Python server
-  startPythonServer(mainWin);
 
 
 
@@ -105,29 +119,21 @@ app.on("ready", async () => {
 
 
   mainWin.webContents.once("did-finish-load", async () => {
+    console.log("App ready - checking for saved user..., did-finish-load");
     const savedUser = await loadUser();
+    if (!savedUser?.jwt) return;
+    console.log("App ready - checking for saved user..., did-finish-load if (!savedUser?.jwt) return;");
+    Object.assign(user, savedUser);
 
-    if (savedUser?.jwt && savedUser?.email) {
-      Object.assign(user, savedUser);
+    // User exists — start background sync
+    connectSocket(user, updateTimer);
+    pollTimerState(user, updateTimer);
 
-
-      connectSocket(user, (updatedTimer) => {
-       Object.assign(timer, updatedTimer);
-       sendToRenderer("timer:update", timer);
-      //  console.log("Received timer update via socket:", updatedTimer);
-      });
-
-      // Start polling timer immediately after loading user
-      pollTimerState(user, (fetchedTimer) => {
-        Object.assign(timer, fetchedTimer);
-        sendToRenderer("timer:update", timer);
-      });
-    }
+    
+     
   });
 
-
-   //takeAndUploadScreenshot(user, timer.isRunning);
-   //flushQueue()
+ 
 });
 
 
@@ -164,18 +170,8 @@ ipcMain.handle("agent:login", async (_evt, payload) => {
     Object.assign(user, res.user);
 
 
-    connectSocket(user, (updatedTimer) => {
-       Object.assign(timer, updatedTimer);
-       sendToRenderer("timer:update", timer);
-      //  console.log("Received timer update via socket:", updatedTimer);
-      });
-
-      
-    // Start polling timer after successful login
-    pollTimerState(user, (fetchedTimer) => {
-      Object.assign(timer, fetchedTimer);
-      sendToRenderer("timer:update", timer);
-    });
+    connectSocket(user, updateTimer);
+    pollTimerState(user, updateTimer);
   }
 
   return res;
@@ -190,14 +186,14 @@ ipcMain.handle("agent:login", async (_evt, payload) => {
 //  App Lifecycle
 // --------------------
 
-// app.on("before-quit", () => {
-//   console.log("🧹 Cleaning up Python process...");
-//   stopPythonServer();
-// });
+app.on("before-quit", () => {
+  console.log("🧹 Cleaning up Python process...");
+  stopPythonServer();
+});
 
-// app.on("will-quit", () => {
-//   stopPythonServer();
-// });
+app.on("will-quit", () => {
+  stopPythonServer();
+});
 
 
 

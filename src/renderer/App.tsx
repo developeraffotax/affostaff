@@ -15,15 +15,14 @@ function App() {
 
   useEffect(() => {
     window.agent.getState().then((state) => {
-      console.log("THE STATE", state)
       setUser(state.user);
       setLoading(false);
     });
 
-    window.agent.onKeyStroke((data) => {
-        setKey(JSON.stringify(data));
-      console.log("KeyStroke", data);
-    })
+    // window.agent.onKeyStroke((data) => {
+    //     setKey(JSON.stringify(data));
+    //   console.log("KeyStroke", data);
+    // })
 
 
   }, []);
@@ -32,12 +31,19 @@ function App() {
   window.agent.onLogout( () => setUser(null) );
 }, []);
 
-  if (loading) return <div>Loading...</div>;
+ 
+
+if (loading)
+  return (
+    <div className="flex items-center justify-center w-full h-screen bg-gray-50">
+      <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
 
   return (
     
 <div className="w-full  flex flex-col justify-between items-center">
-  key: {key}
+  {/* key: {key} */}
         <Routes>
  
         <Route
@@ -50,7 +56,7 @@ function App() {
           path="/"
           element={
             user && user.jwt ? (
-              <Dashboard timer={timer} user={user} onLogoutSuccess={() => setUser(null)} />
+              <Dashboard timer={timer} user={user}  />
             ) : (
               <Navigate to="/login" replace />
             )
@@ -59,7 +65,7 @@ function App() {
         
       </Routes>
 
-      {user && <p className="fixed bottom-0 text-center mb-1 text-sm text-gray-600">Logged in as: {user.name}</p>}
+      {user?.name && <p className="fixed bottom-0 text-center mb-1 text-sm text-gray-600">Logged in as: {user.name}</p>}
 </div>
     
   );

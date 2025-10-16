@@ -18,9 +18,11 @@ const config: ForgeConfig = {
     appVersion: "1.0.0",
     icon: 'assets/icon',
     asar: true,
-    extraResource: ['.env', 'assets',   "./resources/keyboard_listener.exe"
+    extraResource: ['.env', 'assets',   "./resources/keyboard_listener"
       
      ],
+
+    
     
     
   },
@@ -31,10 +33,7 @@ const config: ForgeConfig = {
 
   // },
   makers: [
-    new MakerSquirrel({
-      // setupIcon: 'assets/icon.ico',
-       
-    }),
+    new MakerSquirrel({}),
     new MakerZIP({}, ['darwin']),
     new MakerRpm({}),
     new MakerDeb({}),

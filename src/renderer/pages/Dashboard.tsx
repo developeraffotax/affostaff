@@ -6,11 +6,11 @@ import { FaPlay, FaPause, FaStop } from "react-icons/fa";
 export default function Dashboard({
   timer,
   user,
-  onLogoutSuccess,
+   
 }: {
   timer: Timer;
   user: User;
-  onLogoutSuccess: () => void;
+   
 }) {
   const navigate = useNavigate();
   const [elapsed, setElapsed] = useState("00:00:00");

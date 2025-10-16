@@ -7,6 +7,9 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { configDotenv } from "../utils/configDotenv";
+import { updateTimer, updateUser } from "..";
+import { pollTimerState, stopPolling } from "./pollTimerState";
+import { connectSocket, disconnectSocket } from "./socket";
 
 configDotenv();
 
@@ -52,6 +55,27 @@ export async function loadUser() {
 
 export async function clearUser() {
   if (fs.existsSync(tokenFilePath)) fs.unlinkSync(tokenFilePath);
+ // stop polling + socket + user data
+  stopPolling();
+  disconnectSocket();
+  
+
+  // reset UI
+  updateTimer({
+    _id: "",
+    isRunning: false,
+    startTime: "",
+    department: "",
+    clientName: "",
+    task: "",
+  });
+
+  updateUser({
+    id: "",
+    jwt: "",
+    name: "",
+    email: "",
+  });
 }
 
 
@@ -95,6 +119,7 @@ export async function agentLogin(
     
 
     await saveUser(user);
+    
 
     return { success: true, user };
   } catch (error) {

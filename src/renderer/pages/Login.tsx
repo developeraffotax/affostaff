@@ -31,10 +31,10 @@ export default function Login({ onLoginSuccess }: { onLoginSuccess: (user: User)
   };
 
   return (
-    <div className="relative w-full   flex items-center justify-center mt-4 font-outfit  ">
+    <div className="relative w-full   flex items-center justify-center   font-outfit  ">
       
 
-      <div className="w-full max-w-md p-8 flex flex-col justify-center items-center  bg-white rounded-2xl shadow-lg border border-gray-100">
+      <div className="w-full max-w-md p-8 flex flex-col justify-center items-center  bg-white  shadow-lg border border-gray-100">
         {/* <img
         src="/assets/logo.png"
         alt="App Logo"
