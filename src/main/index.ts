@@ -11,6 +11,7 @@ import { takeAndUploadScreenshot } from "./components/screenshot";
  
 import { getActivity } from "./components/activityTracker";
 import { flushActivity, startPythonServer, stopPythonServer } from "./utils/pythonServer";
+import { updateElectronApp } from "update-electron-app";
  
 
 // --------------------
@@ -20,7 +21,7 @@ configDotenv();
 
 if (require("electron-squirrel-startup")) app.quit();
 
-
+ 
 const SCREENSHOT_INTERVAL_SECONDS = parseInt(process.env.SCREENSHOT_INTERVAL_SECONDS) || 300;
 
 
@@ -85,6 +86,13 @@ if (!gotTheLock) {
 //  App Ready Event
 // --------------------
 app.on("ready", async () => {
+
+  updateElectronApp({
+    updateInterval: "1 hour", // optional, defaults to every launch
+    notifyUser: true,          // show notification if an update is available
+  });
+
+
   mainWin = createWindow();
   trayData = createTray(mainWin, timer);
 

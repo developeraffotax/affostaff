@@ -26,12 +26,16 @@ const config: ForgeConfig = {
     
     
   },
+
+  
   
 
   // rebuildConfig: {
   //   onlyModules: ['screenshot-desktop'],
 
   // },
+
+  
   makers: [
     new MakerSquirrel({}),
     new MakerZIP({}, ['darwin']),
@@ -57,6 +61,8 @@ const config: ForgeConfig = {
           },
         ],
       },
+
+
     }),
     // Fuses are used to enable/disable various Electron functionality
     // at package time, before code signing the application
@@ -70,6 +76,48 @@ const config: ForgeConfig = {
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
   ],
+
+
+
+   publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'developeraffotax',
+          name: 'affostaff',
+        
+        },
+
+        draft: false,
+        prerelease: false,
+        autoRelease: true, // <- ensures Forge will create the release if missing
+      }
+    }
+  ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 };
 
 export default config;

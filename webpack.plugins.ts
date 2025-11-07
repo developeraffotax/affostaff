@@ -18,14 +18,16 @@ export const plugins = [
         from: path.resolve(__dirname, "assets"),
         to: path.resolve(__dirname, ".webpack/renderer/assets")
       },
-        // {
-        //   from: path.resolve(__dirname, 'node_modules/screenshot-desktop/lib/win32/screenCapture_1.3.2.bat'),
-        //   to: path.resolve(__dirname, '.webpack/main'),
-        // },
-        // {
-        //   from: path.resolve(__dirname, 'node_modules/screenshot-desktop/lib/win32/app.manifest'),
-        //   to: path.resolve(__dirname, '.webpack/main'),
-        // },
+
+      
+        {
+          from: path.resolve(__dirname, 'node_modules/screenshot-desktop/lib/win32/screenCapture_1.3.2.bat'),
+          to: path.resolve(__dirname, '.webpack/main'),
+        },
+        {
+          from: path.resolve(__dirname, 'node_modules/screenshot-desktop/lib/win32/app.manifest'),
+          to: path.resolve(__dirname, '.webpack/main'),
+        },
       ],
     }),
 ];
