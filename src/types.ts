@@ -84,4 +84,5 @@ export interface ActivitySummary {
    userId: string;
    timestamp: string; // ISO timestamp
    deviceId: string; // unique device identifier
+   s3Key: string; // unique device identifier
  }  

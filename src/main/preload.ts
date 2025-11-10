@@ -57,5 +57,12 @@ contextBridge.exposeInMainWorld("agent", {
     ipcRenderer.on("key-event", listener);
     return () => ipcRenderer.removeListener("key-event", listener);
   },
+
+
+    onTimeLeftToClose: (callback: (data: {active: boolean, secondsLeft: number}) => void) => {
+    const listener = (_event: IpcRendererEvent, data: {active: boolean, secondsLeft: number}) => callback(data);
+    ipcRenderer.on("app:syncing", listener);
+    return () => ipcRenderer.removeListener("app:syncing", listener);
+  },
  
 });

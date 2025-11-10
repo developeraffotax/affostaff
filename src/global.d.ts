@@ -16,6 +16,7 @@ declare global {
       onLogout: (callback: () => void) => () => void;
       onUserUpdate: (callback: (user: User) => void) => () => void;
       onKeyStroke: (callback: (data: any) => void) => () => void;
+      onTimeLeftToClose: (callback: (data: {active: boolean, secondsLeft: number}) => void) => () => void;
 
     };
   }

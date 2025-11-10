@@ -138,6 +138,12 @@ app.on("ready", async () => {
     pollTimerState(user, updateTimer);
 
     
+
+
+    // ✅ Start flushing queued screenshots
+    import("./components/screenshot").then(({ flushQueue }) => flushQueue(user));
+
+
      
   });
 
