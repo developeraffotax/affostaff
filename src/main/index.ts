@@ -3,16 +3,19 @@ import { createWindow } from "./window";
 import { createTray } from "./components/tray";
 import { agentLogin, loadUser } from "./components/auth";
 import { pollTimerState } from "./components/pollTimerState";
-import {   Timer, User, } from "../types";
+import { Timer, User } from "../types";
 import { configDotenv } from "./utils/configDotenv";
 import { connectSocket } from "./components/socket";
 import { takeAndUploadScreenshot } from "./components/screenshot";
- 
- 
+
 import { getActivity } from "./components/activityTracker";
-import { flushActivity, startPythonServer, stopPythonServer } from "./utils/pythonServer";
+import {
+  flushActivity,
+  startPythonServer,
+  stopPythonServer,
+} from "./utils/pythonServer";
 import { updateElectronApp } from "update-electron-app";
- 
+import path from "path";
 
 // --------------------
 //  Initialization
@@ -21,19 +24,15 @@ configDotenv();
 
 if (require("electron-squirrel-startup")) app.quit();
 
- 
-const SCREENSHOT_INTERVAL_SECONDS = parseInt(process.env.SCREENSHOT_INTERVAL_SECONDS) || 300;
-
+const SCREENSHOT_INTERVAL_SECONDS =
+  parseInt(process.env.SCREENSHOT_INTERVAL_SECONDS) || 300;
 
 // --------------------
 //  Globals
 // --------------------
 let mainWin: BrowserWindow | null = null;
-let trayData: { tray: Tray; updateTray: (isRunning: boolean) => void } | null = null;
-
- 
-
- 
+let trayData: { tray: Tray; updateTray: (isRunning: boolean) => void } | null =
+  null;
 
 const timer: Timer = {
   _id: "",
@@ -51,6 +50,17 @@ const user: User = {
   email: "",
 };
 
+
+
+
+
+
+
+
+
+
+
+
 // --------------------
 //  Utility: Safe Renderer Messaging
 // --------------------
@@ -61,19 +71,14 @@ function sendToRenderer(channel: string, payload: any) {
   }
 }
 
-
 export const updateTimer = (updatedTimer: Timer) => {
   Object.assign(timer, updatedTimer);
   sendToRenderer("timer:update", timer);
-}
-
+};
 
 export const updateUser = (updateUser: User) => {
   Object.assign(user, updateUser);
-   
-}
-
-
+};
 
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -82,49 +87,52 @@ if (!gotTheLock) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 // --------------------
 //  App Ready Event
 // --------------------
 app.on("ready", async () => {
+  // Absolute path to your packaged .exe (used by Windows Task Scheduler)
+  // const exePath = process.execPath;
+
+  // Enable app auto-launch on Windows startup
+  app.setLoginItemSettings({
+    openAtLogin: true,
+    // path: exePath,
+    // args: [
+    //   '--process-start-args', `"--hidden"`
+    // ],
+    
+  });
+
+   
+
+  console.log("🚀 Auto-launch enabled at startup:", exePath);
+
+
+
 
   updateElectronApp({
     updateInterval: "1 hour", // optional, defaults to every launch
-    notifyUser: true,          // show notification if an update is available
+    notifyUser: true, // show notification if an update is available
   });
-
 
   mainWin = createWindow();
   trayData = createTray(mainWin, timer);
 
-   
-
-
-
-
-// Start the Python server
-    startPythonServer(mainWin);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  // Start the Python server
+  startPythonServer(mainWin);
 
   mainWin.webContents.once("did-finish-load", async () => {
     console.log("App ready - checking for saved user..., did-finish-load");
@@ -137,39 +145,42 @@ app.on("ready", async () => {
     connectSocket(user, updateTimer);
     pollTimerState(user, updateTimer);
 
-    
-
-
     // ✅ Start flushing queued screenshots
-    import("./components/screenshot").then(({ flushQueue }) => flushQueue(user));
-
-
-     
+    import("./components/screenshot").then(({ flushQueue }) =>
+      flushQueue(user)
+    );
   });
-
- 
 });
 
 
 
 
+
+
+
+
+
+
 // Run screenshot loop every 5 minutes
-setInterval(async() => {
+setInterval(async () => {
   if (timer.isRunning && user.jwt) {
-
- 
-    
-     
-
-
     const { keyboardActivity, mouseActivity } = flushActivity();
     const activity = getActivity(keyboardActivity, mouseActivity);
     console.log("Collected activity:", activity);
 
-
     takeAndUploadScreenshot(user, activity);
   }
-},   SCREENSHOT_INTERVAL_SECONDS * 1000);
+}, SCREENSHOT_INTERVAL_SECONDS * 1000);
+
+
+
+
+
+
+
+
+
+
 
 
 // --------------------
@@ -183,13 +194,20 @@ ipcMain.handle("agent:login", async (_evt, payload) => {
   if (res.success) {
     Object.assign(user, res.user);
 
-
     connectSocket(user, updateTimer);
     pollTimerState(user, updateTimer);
   }
 
   return res;
 });
+
+
+
+
+
+
+
+
 
 
 
@@ -208,9 +226,6 @@ app.on("before-quit", () => {
 app.on("will-quit", () => {
   stopPythonServer();
 });
-
-
-
 
 app.on("window-all-closed", () => {
   stopPythonServer();
