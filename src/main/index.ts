@@ -116,9 +116,7 @@ app.on("ready", async () => {
     
   });
 
-   
-
-  console.log("🚀 Auto-launch enabled at startup:", exePath);
+  
 
 
 
