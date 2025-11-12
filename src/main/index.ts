@@ -125,7 +125,7 @@ app.on("ready", async () => {
 
 
   updateElectronApp({
-    updateInterval: "1 hour", // optional, defaults to every launch
+    //updateInterval: "1 hour", // optional, defaults to every launch
     notifyUser: true, // show notification if an update is available
   });
 
