@@ -28,6 +28,11 @@ export const plugins = [
           from: path.resolve(__dirname, 'node_modules/screenshot-desktop/lib/win32/app.manifest'),
           to: path.resolve(__dirname, '.webpack/main'),
         },
+
+        // {
+        //   from: path.resolve(__dirname, 'node_modules/screenshot-desktop/lib/win32'),
+        //   to: path.resolve(__dirname, './.webpack/main/win32'),
+        // },
       ],
     }),
 ];

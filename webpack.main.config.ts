@@ -18,5 +18,8 @@ export const mainConfig: Configuration = {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },
    
- 
+  // // <-- add this
+  // externals: {
+  //   'screenshot-desktop': 'commonjs2 screenshot-desktop',
+  // },
 };

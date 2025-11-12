@@ -86,3 +86,10 @@ export interface ActivitySummary {
    deviceId: string; // unique device identifier
    s3Key: string; // unique device identifier
  }  
+
+
+
+
+
+
+ 

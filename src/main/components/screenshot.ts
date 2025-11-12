@@ -6,12 +6,30 @@ import screenshot from "screenshot-desktop";
 import { app } from "electron";
 import { ActiveWindow, ActivitySummary, ScreenshotMeta, User } from "../../types";
 import { getActiveWindowActivity } from "./activeWindow";
+import { log } from "../logger";
 
 const DEVICE_ID = machineIdSync(true);
 const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL || "http://localhost:5000";
 
 const QUEUE_DIR = path.join(app.getPath("userData"), "queue");
 if (!fs.existsSync(QUEUE_DIR)) fs.mkdirSync(QUEUE_DIR, { recursive: true });
+
+// ----------------------------
+//  PATCH screenshot-desktop
+// ----------------------------
+  //  const isDev = !app.isPackaged;
+ 
+  //  const libPath = isDev
+  //    ? path.join(app.getAppPath(), "win32")
+  //    : path.join(process.resourcesPath, "win32");
+
+
+
+// const libPath = path.join(process.resourcesPath, process.platform === 'win32' ? 'win32' : process.platform);
+
+// patch screenshot-desktop to find its .bat / native binaries
+// (screenshot as any).getExecPath = () => libPath;
+ 
 
 /**
  * Main entry point — capture screenshot, get presigned URL, upload, and send metadata.
@@ -56,6 +74,7 @@ export async function takeAndUploadScreenshot(user: User, activity: ActivitySumm
     // 5️⃣ Delete local temp file
     if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
   } catch (err) {
+    log("[Screenshot] Capture or upload failed:", err);
     console.error("[Screenshot] Capture or upload failed:", err.message || err);
   }
 }

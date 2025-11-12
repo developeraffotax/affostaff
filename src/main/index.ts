@@ -16,7 +16,10 @@ import {
 } from "./utils/pythonServer";
 import { updateElectronApp } from "update-electron-app";
 import path from "path";
+// In your main process entry (e.g., index.ts)
+import { log } from "./logger";
 
+log("App starting...");
 // --------------------
 //  Initialization
 // --------------------
