@@ -14,7 +14,7 @@ import { rendererConfig } from "./webpack.renderer.config";
 
 const config: ForgeConfig = {
   packagerConfig: {
-    appVersion: "1.0.0",
+     
     icon: "assets/icon",
     asar: {
       unpack: '**/.webpack/main/{screenCapture_1.3.2.bat,app.manifest}',
