@@ -28,7 +28,7 @@ configDotenv();
 if (require("electron-squirrel-startup")) app.quit();
 
 const SCREENSHOT_INTERVAL_SECONDS =
-  parseInt(process.env.SCREENSHOT_INTERVAL_SECONDS) || 300;
+  parseInt(process.env.SCREENSHOT_INTERVAL_SECONDS ) || 300;
 
 // --------------------
 //  Globals
@@ -168,6 +168,7 @@ setInterval(async () => {
     const { keyboardActivity, mouseActivity } = flushActivity();
     const activity = getActivity(keyboardActivity, mouseActivity);
     console.log("Collected activity:", activity);
+    log("Taking screenshot with activity:", activity);
 
     takeAndUploadScreenshot(user, activity);
   }

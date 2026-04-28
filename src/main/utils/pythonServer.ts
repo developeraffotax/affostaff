@@ -3,6 +3,7 @@ import path from "path";
 import { spawn, ChildProcessWithoutNullStreams, exec } from "child_process";
 import { app, type BrowserWindow } from "electron";
 import type { ActivityEvent, KeyboardActivity, MouseActivity } from "../../types";
+import { log } from "../logger";
 
 let pyProc: ChildProcessWithoutNullStreams | null = null;
 let server: net.Server | null = null;
@@ -33,13 +34,14 @@ export function startPythonServer(mainWin: BrowserWindow) {
   // Spawn the Python executable
   pyProc = spawn(exePath);
 
-  pyProc.stdout.on("data", (data) => console.log("🐍 Python:", data.toString()));
-  pyProc.stderr.on("data", (data) => console.error("🐍 Python error:", data.toString()));
+  pyProc.stdout.on("data", (data) => {console.log("🐍 Python:", data.toString()); log("🐍 Python:", data.toString())});
+  pyProc.stderr.on("data", (data) => {console.error("🐍 Python error:", data.toString()); log("🐍 Python:", data.toString())});
   pyProc.on("close", () => console.log("🐍 Python process closed."));
 
   // Create a TCP server to receive events
   server = net.createServer((socket) => {
     console.log("🐍 Python connected to TCP server");
+    log("🐍 Python connected to TCP server");
 
     socket.on("data", (data) => {
       const messages = data.toString().split("\n").filter(Boolean);
@@ -56,6 +58,7 @@ export function startPythonServer(mainWin: BrowserWindow) {
 
           // Handle keyboard/mouse events
           if (event.type === "keyboard") {
+            log("🐍 Keyboard event:", event);
             keyboardActivity.push({
               type: event.type,
               key: event.key,
@@ -63,6 +66,7 @@ export function startPythonServer(mainWin: BrowserWindow) {
               timestamp: event.timestamp,
             });
           } else {
+            log("🐍 Mouse event:", event);
             mouseActivity.push({
               type: event.type,
               subType: event.subType,
@@ -77,6 +81,7 @@ export function startPythonServer(mainWin: BrowserWindow) {
           mainWin.webContents.send("key-event", event);
         } catch (err) {
           console.error("🐍 Parse error:", err);
+          log("🐍 Parse error:", err);
         }
       });
     });
@@ -89,8 +94,10 @@ export function startPythonServer(mainWin: BrowserWindow) {
       // ECONNRESET should not happen with graceful shutdown, but just in case
       if (err.code === "ECONNRESET") {
         console.warn("🐍 Python connection reset (ignored)");
+        log("🐍 Python connection reset (ignored)");
       } else {
         console.error("🐍 Socket error:", err);
+        log("🐍 Socket error:", err);
       }
     });
   });
@@ -98,13 +105,16 @@ export function startPythonServer(mainWin: BrowserWindow) {
   server.on("error", (err: NodeJS.ErrnoException) => {
     if (err.code === "ECONNRESET") {
       console.warn("🐍 Server connection reset (ignored)");
+      log("🐍 Server connection reset (ignored)");
     } else {
       console.error("🐍 Server error:", err);
+      log("🐍 Server error:", err);
     }
   });
 
   server.listen(7070, "127.0.0.1", () => {
     console.log("🐍 Listening on port 7070 for Python events");
+    log("🐍 Listening on port 7070 for Python events");
   });
 }
 
