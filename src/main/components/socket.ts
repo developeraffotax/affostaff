@@ -30,13 +30,15 @@ export function connectSocket(
       auth: { token: jwt },
       query: { deviceId: DEVICE_ID },
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 2000,
+      
+       
     });
 
     socket.on("connect", () => {
       console.log("✅ Socket connected:", socket?.id);
-      socket.emit("agent:subscribe", { id, deviceId: DEVICE_ID });
+      socket?.emit("agent:subscribe", { id, deviceId: DEVICE_ID });
     });
 
     socket.on("disconnect", (reason) => {
