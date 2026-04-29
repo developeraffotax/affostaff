@@ -21,8 +21,14 @@ export function connectSocket(
   { jwt, id }: User,
   onTimerUpdate: (timer: Timer) => void
 ) {
-  // If already connected, don’t reconnect
-  if (socket && socket.connected) return socket;
+    // Allow reconnect if socket exists but is disconnected
+  if (socket) {
+    if (socket.connected) return socket;
+    // Clean up dead socket before making a new one
+    socket.removeAllListeners();
+    socket.disconnect();
+    socket = null;
+  }
 
   try {
     socket = io(BACKEND_BASE_URL, {
@@ -31,7 +37,7 @@ export function connectSocket(
       query: { deviceId: DEVICE_ID },
       reconnection: true,
       reconnectionAttempts: Infinity,
-      reconnectionDelay: 2000,
+      reconnectionDelay: 2000, 
       
        
     });
